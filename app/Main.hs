@@ -136,19 +136,26 @@ cloneShallow
   :: Text
   -- ^ repo
   -> Text
-  -- ^ branch/tag
+  -- ^ branch/tag/sha1
   -> Turtle.FilePath
   -- ^ target directory
   -> IO ExitCode
-cloneShallow from ref into =
-  proc "git"
+cloneShallow from ref into = do
+  let destination = pathToTextUnsafe into
+  _ <- proc "git"
        [ "clone"
        , "-q"
        , "-c", "advice.detachedHead=false"
-       , "--depth", "1"
-       , "-b", ref
+       -- , "--depth", "1"
        , from
-       , pathToTextUnsafe into
+       , destination
+       ] empty .||. exit (ExitFailure 1)
+  proc "git"
+       [ "-C", destination
+       , "reset"
+       , "-q"
+       , "--hard"
+       , ref
        ] empty .||. exit (ExitFailure 1)
 
 listRemoteTags
